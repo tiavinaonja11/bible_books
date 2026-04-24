@@ -244,7 +244,7 @@ export default function SearchScreen() {
           </View>
           <ThemedText style={styles.emptyTitle}>Aucun résultat</ThemedText>
           <ThemedText style={styles.emptySub}>Essayez un autre mot-clé ou vérifiez l'orthographe</ThemedText>
-          <View style={styles.chips} style={{ marginTop: 16 }}>
+          <View style={[styles.chips, { marginTop: 16 }]}>
             {SUGGESTIONS.slice(0, 4).map(s => (
               <TouchableOpacity key={s} style={styles.chip} onPress={() => doSearch(s)}>
                 <ThemedText style={styles.chipText}>{s}</ThemedText>
