@@ -20,22 +20,22 @@ import {
 
 const VERSES_OF_DAY = {
   fr: [
-    { ref: 'Jean 3:16',        book: 43, chapter: 3,  verse: 16, text: 'Car Dieu a tant aimé le monde qu\'il a donné son Fils unique, afin que quiconque croit en lui ne périsse point, mais qu\'il ait la vie éternelle.' },
-    { ref: 'Psaume 23:1',      book: 19, chapter: 23, verse: 1,  text: 'L\'Éternel est mon berger : je ne manquerai de rien.' },
-    { ref: 'Philippiens 4:13', book: 50, chapter: 4,  verse: 13, text: 'Je puis tout par celui qui me fortifie.' },
-    { ref: 'Romains 8:28',     book: 45, chapter: 8,  verse: 28, text: 'Nous savons, du reste, que toutes choses concourent au bien de ceux qui aiment Dieu.' },
-    { ref: 'Matthieu 5:3',     book: 40, chapter: 5,  verse: 3,  text: 'Heureux les pauvres en esprit, car le royaume des cieux est à eux !' },
-    { ref: 'Proverbes 3:5',    book: 20, chapter: 3,  verse: 5,  text: 'Confie-toi en l\'Éternel de tout ton cœur, et ne t\'appuie pas sur ta sagesse.' },
-    { ref: 'Ésaïe 40:31',      book: 23, chapter: 40, verse: 31, text: 'Mais ceux qui se confient en l\'Éternel renouvellent leur force. Ils prennent le vol comme les aigles ; ils courent, et ne se lassent point.' },
+    { ref: 'Jean 3:16', book_name: 'Jean', book: 43, chapter: 3, verse: 16, text: 'Car Dieu a tant aimé le monde qu\'il a donné son Fils unique, afin que quiconque croit en lui ne périsse point, mais qu\'il ait la vie éternelle.' },
+    { ref: 'Psaume 23:1', book_name: 'Psaume', book: 19, chapter: 23, verse: 1, text: 'L\'Éternel est mon berger : je ne manquerai de rien.' },
+    { ref: 'Philippiens 4:13', book_name: 'Philippiens', book: 50, chapter: 4, verse: 13, text: 'Je puis tout par celui qui me fortifie.' },
+    { ref: 'Romains 8:28', book_name: 'Romains', book: 45, chapter: 8, verse: 28, text: 'Nous savons, du reste, que toutes choses concourent au bien de ceux qui aiment Dieu.' },
+    { ref: 'Matthieu 5:3', book_name: 'Matthieu', book: 40, chapter: 5, verse: 3, text: 'Heureux les pauvres en esprit, car le royaume des cieux est à eux !' },
+    { ref: 'Proverbes 3:5', book_name: 'Proverbes', book: 20, chapter: 3, verse: 5, text: 'Confie-toi en l\'Éternel de tout ton cœur, et ne t\'appuie pas sur ta sagesse.' },
+    { ref: 'Ésaïe 40:31', book_name: 'Ésaïe', book: 23, chapter: 40, verse: 31, text: 'Mais ceux qui se confient en l\'Éternel renouvellent leur force. Ils prennent le vol comme les aigles ; ils courent, et ne se lassent point.' },
   ],
   en: [
-    { ref: 'John 3:16',        book: 43, chapter: 3,  verse: 16, text: 'For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.' },
-    { ref: 'Psalm 23:1',       book: 19, chapter: 23, verse: 1,  text: 'The LORD is my shepherd; I shall not want.' },
-    { ref: 'Philippians 4:13', book: 50, chapter: 4,  verse: 13, text: 'I can do all things through Christ which strengtheneth me.' },
-    { ref: 'Romans 8:28',      book: 45, chapter: 8,  verse: 28, text: 'And we know that all things work together for good to them that love God.' },
-    { ref: 'Matthew 5:3',      book: 40, chapter: 5,  verse: 3,  text: 'Blessed are the poor in spirit: for theirs is the kingdom of heaven.' },
-    { ref: 'Proverbs 3:5',     book: 20, chapter: 3,  verse: 5,  text: 'Trust in the LORD with all thine heart; and lean not unto thine own understanding.' },
-    { ref: 'Isaiah 40:31',     book: 23, chapter: 40, verse: 31, text: 'But they that wait upon the LORD shall renew their strength; they shall mount up with wings as eagles; they shall run, and not be weary.' },
+    { ref: 'John 3:16', book_name: 'John', book: 43, chapter: 3, verse: 16, text: 'For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.' },
+    { ref: 'Psalm 23:1', book_name: 'Psalm', book: 19, chapter: 23, verse: 1, text: 'The LORD is my shepherd; I shall not want.' },
+    { ref: 'Philippians 4:13', book_name: 'Philippians', book: 50, chapter: 4, verse: 13, text: 'I can do all things through Christ which strengtheneth me.' },
+    { ref: 'Romans 8:28', book_name: 'Romans', book: 45, chapter: 8, verse: 28, text: 'And we know that all things work together for good to them that love God.' },
+    { ref: 'Matthew 5:3', book_name: 'Matthew', book: 40, chapter: 5, verse: 3, text: 'Blessed are the poor in spirit: for theirs is the kingdom of heaven.' },
+    { ref: 'Proverbs 3:5', book_name: 'Proverbs', book: 20, chapter: 3, verse: 5, text: 'Trust in the LORD with all thine heart; and lean not unto thine own understanding.' },
+    { ref: 'Isaiah 40:31', book_name: 'Isaiah', book: 23, chapter: 40, verse: 31, text: 'But they that wait upon the LORD shall renew their strength; they shall mount up with wings as eagles; they shall run, and not be weary.' },
   ],
 };
 
@@ -378,7 +378,13 @@ function TabIndex() {
   // ── Favori verset du jour ──────────────────────────────────────────────────────
   const handleVerseFavorite = useCallback(() => {
     if (!appState) return;
-    const verseObj = { book: verse.book, chapter: verse.chapter, verse: verse.verse, text: verse.text };
+    const verseObj = { 
+      book: verse.book, 
+      book_name: verse.book_name,
+      chapter: verse.chapter, 
+      verse: verse.verse, 
+      text: verse.text 
+    };
     if (isVerseFav) {
       appState.removeFavorite(verse.book, verse.chapter, verse.verse);
       Alert.alert('', ui.removedFav);
@@ -500,7 +506,6 @@ function TabIndex() {
 
           {/* Corps */}
           <View style={styles.verseBody}>
-            {/* Guillemet décoratif (pas Ionicons — caractère Unicode) */}
             <ThemedText style={styles.decorQuote}>{'\u201C'}</ThemedText>
             <ThemedText style={styles.verseText}>{verse.text}</ThemedText>
           </View>
@@ -512,7 +517,6 @@ function TabIndex() {
               <ThemedText style={styles.verseRef}>{verse.ref}</ThemedText>
             </View>
             <View style={styles.verseActions}>
-              {/* Favori */}
               <TouchableOpacity
                 style={styles.verseActionBtn}
                 onPress={handleVerseFavorite}
@@ -524,7 +528,6 @@ function TabIndex() {
                   color={isVerseFav ? '#D85A30' : '#C8B4AC'}
                 />
               </TouchableOpacity>
-              {/* Partager */}
               <TouchableOpacity
                 style={styles.verseActionBtn}
                 onPress={handleVerseShare}
@@ -535,34 +538,6 @@ function TabIndex() {
             </View>
           </View>
         </View>
-
-        {/* ══ CONTINUER LA LECTURE ══ */}
-        <TouchableOpacity style={styles.continueCard} onPress={handleContinueReading} activeOpacity={0.85}>
-          <LinearGradient colors={['#FAF0E8', '#FFF8F0']} style={styles.continueGradient}>
-            <View style={styles.continueHeader}>
-              <Ionicons name="play-circle" size={22} color="#8B4513" />
-              <ThemedText style={styles.continueHeaderText}>{ui.continueReading}</ThemedText>
-              <Ionicons name="chevron-forward" size={16} color="#C8B4AC" style={{ marginLeft: 'auto' }} />
-            </View>
-            <View style={styles.continueContent}>
-              <LinearGradient colors={['#8B4513', '#CD853F']} style={styles.bookIconCircle}>
-                <ThemedText style={styles.bookIconText}>{lastRead.abbrev}</ThemedText>
-              </LinearGradient>
-              <View style={styles.continueInfo}>
-                <ThemedText style={styles.continueBook}>
-                  {lastRead.bookName} {lastRead.chapter}
-                </ThemedText>
-                <ThemedText style={styles.continueTitle}>{lastRead.title}</ThemedText>
-                <View style={styles.progressBarContainer}>
-                  <View style={[styles.progressBar, { width: `${lastRead.progress}%` }]} />
-                </View>
-                <ThemedText style={styles.continueProgress}>
-                  {lastRead.progress}% {ui.completed}
-                </ThemedText>
-              </View>
-            </View>
-          </LinearGradient>
-        </TouchableOpacity>
 
         {/* ══ ACCÈS RAPIDE ══ */}
         <View style={styles.sectionHeader}>
@@ -637,6 +612,34 @@ function TabIndex() {
             <ThemedText style={styles.statLabel}>{ui.progress}</ThemedText>
           </View>
         </View>
+
+        {/* ══ CONTINUER LA LECTURE ══ */}
+        <TouchableOpacity style={styles.continueCard} onPress={handleContinueReading} activeOpacity={0.85}>
+          <LinearGradient colors={['#FAF0E8', '#FFF8F0']} style={styles.continueGradient}>
+            <View style={styles.continueHeader}>
+              <Ionicons name="play-circle" size={22} color="#8B4513" />
+              <ThemedText style={styles.continueHeaderText}>{ui.continueReading}</ThemedText>
+              <Ionicons name="chevron-forward" size={16} color="#C8B4AC" style={{ marginLeft: 'auto' }} />
+            </View>
+            <View style={styles.continueContent}>
+              <LinearGradient colors={['#8B4513', '#CD853F']} style={styles.bookIconCircle}>
+                <ThemedText style={styles.bookIconText}>{lastRead.abbrev}</ThemedText>
+              </LinearGradient>
+              <View style={styles.continueInfo}>
+                <ThemedText style={styles.continueBook}>
+                  {lastRead.bookName} {lastRead.chapter}
+                </ThemedText>
+                <ThemedText style={styles.continueTitle}>{lastRead.title}</ThemedText>
+                <View style={styles.progressBarContainer}>
+                  <View style={[styles.progressBar, { width: `${lastRead.progress}%` }]} />
+                </View>
+                <ThemedText style={styles.continueProgress}>
+                  {lastRead.progress}% {ui.completed}
+                </ThemedText>
+              </View>
+            </View>
+          </LinearGradient>
+        </TouchableOpacity>
 
         {/* ══ PLANS DE LECTURE ══ */}
         <View style={styles.sectionHeader}>
@@ -729,13 +732,11 @@ const styles = StyleSheet.create({
   },
   headerVersion: { color: '#fff', fontSize: 12, fontWeight: '600' },
 
-  // Contenu
-  contentContainer: { padding: 16, paddingTop: 20 },
-
   // Section header
   sectionHeader: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     marginBottom: 12, marginTop: 20,
+    marginHorizontal: 16,
   },
   sectionIconBox: {
     width: 26, height: 26, borderRadius: 8,
@@ -805,6 +806,7 @@ const styles = StyleSheet.create({
     elevation: 3, overflow: 'hidden',
     borderWidth: 1, borderColor: '#F0E0D0',
     marginHorizontal: 16,
+    marginTop: 8,
   },
   continueGradient:   { padding: 16, gap: 14 },
   continueHeader:     { flexDirection: 'row', alignItems: 'center', gap: 8 },
