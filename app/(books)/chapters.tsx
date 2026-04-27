@@ -16,9 +16,6 @@ const { width } = Dimensions.get('window');
 const COLS = 5;
 const CELL = (width - 32 - (COLS - 1) * 10) / COLS;
 
-// Chapitres lus (à connecter à votre store)
-const READ_CHAPTERS: number[] = [1, 2, 3, 4, 5];
-
 export default function ChaptersScreen() {
   const router = useRouter();
   const appState = useContext(AppContext);
@@ -29,8 +26,19 @@ export default function ChaptersScreen() {
   const bookNumber = parseInt(book || '0', 10);
   const chapters = useMemo(() => getChapters(bookNumber), [bookNumber, getChapters]);
 
-  const readCount = READ_CHAPTERS.filter(c => chapters.includes(c)).length;
-  const progress = chapters.length > 0 ? Math.round((readCount / chapters.length) * 100) : 0;
+  // Fonction pour vérifier si un chapitre est marqué (bookmark)
+  const isChapterBookmarked = (chapter: number): boolean => {
+    if (!appState?.bookmark) return false;
+    return appState.bookmark.book === bookNumber && appState.bookmark.chapter === chapter;
+  };
+
+  // Compter uniquement les chapitres marqués (pas automatiquement tous les chapitres visités)
+  const bookmarkedChapters = chapters.filter(ch => isChapterBookmarked(ch));
+  const bookmarkedCount = bookmarkedChapters.length;
+  
+  // Pour la progression, on peut aussi montrer le dernier chapitre lu
+  const currentChapter = appState?.bookmark?.chapter || 0;
+  const progress = chapters.length > 0 ? Math.round((currentChapter / chapters.length) * 100) : 0;
 
   const handleChapterPress = (chapter: number) => {
     router.push({
@@ -40,18 +48,18 @@ export default function ChaptersScreen() {
   };
 
   const renderChapter = ({ item }: { item: number }) => {
-    const isRead = READ_CHAPTERS.includes(item);
+    const isBookmarked = isChapterBookmarked(item);
     return (
       <TouchableOpacity
-        style={[styles.cell, isRead && styles.cellRead]}
+        style={[styles.cell, isBookmarked && styles.cellRead]}
         onPress={() => handleChapterPress(item)}
         activeOpacity={0.7}
       >
-        {isRead ? (
+        {isBookmarked ? (
           <LinearGradient colors={['#6B3A2A', '#A0522D']} style={styles.cellGradient}>
             <ThemedText style={styles.cellNumRead}>{item}</ThemedText>
             <View style={styles.checkDot}>
-              <Ionicons name="checkmark" size={8} color="#fff" />
+              <Ionicons name="bookmark" size={8} color="#fff" />
             </View>
           </LinearGradient>
         ) : (
@@ -85,8 +93,13 @@ export default function ChaptersScreen() {
             <View style={[styles.progressFill, { width: `${progress}%` }]} />
           </View>
           <ThemedText style={styles.progressSub}>
-            {readCount} / {chapters.length} chapitres lus
+            Chapitre actuel: {currentChapter} / {chapters.length}
           </ThemedText>
+          {bookmarkedCount > 0 && (
+            <ThemedText style={styles.bookmarkSub}>
+              📖 {bookmarkedCount} chapitre{bookmarkedCount > 1 ? 's' : ''} marqué{bookmarkedCount > 1 ? 's' : ''}
+            </ThemedText>
+          )}
         </View>
       </LinearGradient>
 
@@ -94,11 +107,11 @@ export default function ChaptersScreen() {
       <View style={styles.legend}>
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: '#6B3A2A' }]} />
-          <ThemedText style={styles.legendText}>Lu</ThemedText>
+          <ThemedText style={styles.legendText}>Marque-page</ThemedText>
         </View>
         <View style={styles.legendItem}>
           <View style={[styles.legendDot, { backgroundColor: '#F0E6DF', borderWidth: 1, borderColor: '#D4BEB5' }]} />
-          <ThemedText style={styles.legendText}>Non lu</ThemedText>
+          <ThemedText style={styles.legendText}>Non marqué</ThemedText>
         </View>
         <ThemedText style={styles.chapterCount}>{chapters.length} chapitres</ThemedText>
       </View>
@@ -144,6 +157,7 @@ const styles = StyleSheet.create({
   },
   progressFill: { height: '100%', backgroundColor: '#FFD4A8', borderRadius: 3 },
   progressSub: { color: 'rgba(255,255,255,0.55)', fontSize: 11 },
+  bookmarkSub: { color: '#FFD4A8', fontSize: 11, marginTop: 4 },
 
   legend: {
     flexDirection: 'row', alignItems: 'center', gap: 16,

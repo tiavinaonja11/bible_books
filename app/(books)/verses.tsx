@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useCallback, useContext, useMemo, useRef, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert, Animated, Clipboard, FlatList, Modal,
   PanResponder, Platform, Share, StatusBar,
@@ -10,7 +10,7 @@ import {
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { AppContext } from '@/hooks/useappstore';
+import { AppContext, BookmarkPosition, Verse } from '@/hooks/useappstore';
 import { useBible } from '@/hooks/usebible ';
 import { HIGHLIGHT_COLORS, useHighlight } from '@/hooks/useHighlight';
 
@@ -43,19 +43,59 @@ export default function VersesScreen() {
 
   const [fontSize, setFontSize] = useState(16);
   const [showFontPanel, setShowFontPanel] = useState(false);
-  const [selectedVerse, setSelectedVerse] = useState<any>(null);
+  const [selectedVerse, setSelectedVerse] = useState<Verse | null>(null);
   const [showHighlightModal, setShowHighlightModal] = useState(false);
   const [note, setNote] = useState('');
   const [tempColor, setTempColor] = useState(HIGHLIGHT_COLORS[0].value);
+  const [isBookmarked, setIsBookmarked] = useState(false);
 
   // Swipe animation
   const swipeX = useRef(new Animated.Value(0)).current;
   const isNavigating = useRef(false);
 
+  // ✅ Correction: Valeurs par défaut pour éviter undefined
   const bookNumber = parseInt(book || '0', 10);
   const chapterNumber = parseInt(chapter || '1', 10);
   const verses = useMemo(() => getVerses(bookNumber, chapterNumber), [bookNumber, chapterNumber, getVerses]);
   const chapterTitle = getChapterTitle(bookName as string, chapterNumber);
+
+  // Vérifier si le chapitre est en marque-page (UNIQUEMENT pour l'affichage)
+  useEffect(() => {
+    const checkBookmark = () => {
+      if (appState?.bookmark) {
+        const isMarked = appState.bookmark.book === bookNumber && appState.bookmark.chapter === chapterNumber;
+        setIsBookmarked(isMarked);
+      } else {
+        setIsBookmarked(false);
+      }
+    };
+    checkBookmark();
+  }, [appState?.bookmark, bookNumber, chapterNumber]);
+
+  // ── Marque-page (UNIQUEMENT au clic) ──────────────────────────────────────────────
+  const handleBookmark = useCallback(() => {
+    if (!appState) return;
+    
+    if (isBookmarked) {
+      // Retirer le marque-page
+      appState.clearBookmark();
+      setIsBookmarked(false);
+      Alert.alert('Marque-page retiré', `Chapitre ${chapterNumber} retiré des marque-pages`);
+    } else {
+      // Ajouter le marque-page
+      const bookmarkPos: BookmarkPosition = {
+        book: bookNumber,
+        chapter: chapterNumber,
+        verse: 1,
+        book_name_fr: bookName as string,
+        book_name_en: bookName as string,
+        timestamp: Date.now(),
+      };
+      appState.setBookmark(bookmarkPos);
+      setIsBookmarked(true);
+      Alert.alert('Marque-page ajouté', `Chapitre ${chapterNumber} ajouté à vos marque-pages`);
+    }
+  }, [appState, isBookmarked, bookNumber, chapterNumber, bookName]);
 
   // ── Navigation avec animation swipe ──────────────────────────────────────────
   const navigateChapter = useCallback((dir: 'prev' | 'next') => {
@@ -76,7 +116,7 @@ export default function VersesScreen() {
       swipeX.setValue(dir === 'next' ? 400 : -400);
       router.replace({
         pathname: '/(books)/verses',
-        params: { book: bookNumber, chapter: next.toString(), bookName },
+        params: { book: bookNumber.toString(), chapter: next.toString(), bookName: bookName as string },
       });
       Animated.timing(swipeX, {
         toValue: 0,
@@ -92,7 +132,7 @@ export default function VersesScreen() {
       onMoveShouldSetPanResponder: (_, g) =>
         Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.5,
       onPanResponderMove: (_, g) => {
-        swipeX.setValue(g.dx * 0.25); // léger suivi du doigt
+        swipeX.setValue(g.dx * 0.25);
       },
       onPanResponderRelease: (_, g) => {
         if (g.dx < -60) {
@@ -110,15 +150,18 @@ export default function VersesScreen() {
   ).current;
 
   // ── Favoris ──────────────────────────────────────────────────────────────────
-  const handleFavorite = useCallback((verse: any) => {
+  const handleFavorite = useCallback((verse: Verse) => {
     if (!appState) return;
     const isFav = appState.isFavorite(verse.book, verse.chapter, verse.verse);
-    if (isFav) appState.removeFavorite(verse.book, verse.chapter, verse.verse);
-    else appState.addFavorite(verse, lang as 'fr' | 'en');
+    if (isFav) {
+      appState.removeFavorite(verse.book, verse.chapter, verse.verse);
+    } else {
+      appState.addFavorite(verse, lang as 'fr' | 'en');
+    }
   }, [appState, lang]);
 
   // ── Surlignage ───────────────────────────────────────────────────────────────
-  const openHighlight = (verse: any) => {
+  const openHighlight = (verse: Verse) => {
     const ex = getVerseHighlights(verse.book, verse.chapter, verse.verse)[0];
     setSelectedVerse(verse);
     setTempColor(ex?.color || HIGHLIGHT_COLORS[0].value);
@@ -147,26 +190,26 @@ export default function VersesScreen() {
   };
 
   // ── Copier / Partager ─────────────────────────────────────────────────────────
-  const handleCopy = useCallback((verse: any) => {
+  const handleCopy = useCallback((verse: Verse) => {
     Clipboard.setString(`${bookName} ${chapterNumber}:${verse.verse}\n${verse.text}`);
     Alert.alert('✓', 'Verset copié');
   }, [bookName, chapterNumber]);
 
-  const handleShare = useCallback(async (verse: any) => {
+  const handleShare = useCallback(async (verse: Verse) => {
     try {
       await Share.share({ message: `« ${verse.text} »\n— ${bookName} ${chapterNumber}:${verse.verse}` });
     } catch (e: any) { Alert.alert('Erreur', e.message); }
   }, [bookName, chapterNumber]);
 
   // ── Couleur surlignage ────────────────────────────────────────────────────────
-  const getVerseBg = (verse: any) => {
+  const getVerseBg = (verse: Verse) => {
     const color = getHighlightColor(verse.book, verse.chapter, verse.verse);
     if (!color) return 'transparent';
     return HIGHLIGHT_COLORS.find(c => c.value === color)?.bg || 'transparent';
   };
 
   // ── Rendu verset ─────────────────────────────────────────────────────────────
-  const renderVerse = ({ item }: { item: any }) => {
+  const renderVerse = ({ item }: { item: Verse }) => {
     const isFav = appState?.isFavorite(item.book, item.chapter, item.verse);
     const highlighted = hasHighlight(item.book, item.chapter, item.verse);
     const hlColor = getHighlightColor(item.book, item.chapter, item.verse);
@@ -253,7 +296,6 @@ export default function VersesScreen() {
       <LinearGradient colors={['#2C1208', '#5C2E15', '#7A3D20']} style={styles.header}>
         {/* Ligne nav */}
         <View style={styles.headerNav}>
-          {/* UN SEUL bouton retour — le header système est masqué via _layout.tsx */}
           <TouchableOpacity onPress={() => router.back()} style={styles.headerIconBtn}>
             <Ionicons name="arrow-back" size={20} color="#fff" />
           </TouchableOpacity>
@@ -276,10 +318,13 @@ export default function VersesScreen() {
             <ThemedText style={styles.headerLabel}>CHAPITRE</ThemedText>
             <ThemedText style={styles.headerTitle}>{chapterTitle}</ThemedText>
             <View style={styles.headerActions}>
-              <TouchableOpacity style={styles.headerActionBtn}
-                onPress={() => Alert.alert('Marque-page', `Chapitre ${chapterNumber} ajouté`)}>
-                <Ionicons name="bookmark-outline" size={13} color="#fff" />
-                <ThemedText style={styles.headerActionText}>Marque-page</ThemedText>
+              <TouchableOpacity 
+                style={[styles.headerActionBtn, isBookmarked && styles.headerActionBtnActive]} 
+                onPress={handleBookmark}>
+                <Ionicons name={isBookmarked ? 'bookmark' : 'bookmark-outline'} size={13} color="#fff" />
+                <ThemedText style={styles.headerActionText}>
+                  {isBookmarked ? 'Marqué' : 'Marque-page'}
+                </ThemedText>
               </TouchableOpacity>
               <TouchableOpacity style={styles.headerActionBtn}
                 onPress={() => Alert.alert('Audio', 'Lecture audio à venir')}>
@@ -290,10 +335,13 @@ export default function VersesScreen() {
           </View>
         ) : (
           <View style={styles.headerActions}>
-            <TouchableOpacity style={styles.headerActionBtn}
-              onPress={() => Alert.alert('Marque-page', `Chapitre ${chapterNumber} ajouté`)}>
-              <Ionicons name="bookmark-outline" size={13} color="#fff" />
-              <ThemedText style={styles.headerActionText}>Marque-page</ThemedText>
+            <TouchableOpacity 
+              style={[styles.headerActionBtn, isBookmarked && styles.headerActionBtnActive]} 
+              onPress={handleBookmark}>
+              <Ionicons name={isBookmarked ? 'bookmark' : 'bookmark-outline'} size={13} color="#fff" />
+              <ThemedText style={styles.headerActionText}>
+                {isBookmarked ? 'Marqué' : 'Marque-page'}
+              </ThemedText>
             </TouchableOpacity>
             <TouchableOpacity style={styles.headerActionBtn}
               onPress={() => Alert.alert('Audio', 'Lecture audio à venir')}>
@@ -336,7 +384,6 @@ export default function VersesScreen() {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.list}
           ListFooterComponent={renderFooter}
-          // Désactiver le scroll horizontal pour laisser le PanResponder gérer
           scrollEventThrottle={16}
         />
       </Animated.View>
@@ -386,7 +433,7 @@ export default function VersesScreen() {
             />
 
             <View style={styles.modalBtns}>
-              {getVerseHighlights(selectedVerse?.book, selectedVerse?.chapter, selectedVerse?.verse)[0] && (
+              {selectedVerse && getVerseHighlights(selectedVerse.book, selectedVerse.chapter, selectedVerse.verse)[0] && (
                 <TouchableOpacity style={styles.btnRemove} onPress={removeHighlightFn}>
                   <ThemedText style={styles.btnRemoveText}>Supprimer</ThemedText>
                 </TouchableOpacity>
@@ -440,6 +487,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.13)',
     borderRadius: 20, paddingHorizontal: 11, paddingVertical: 6,
     borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+  },
+  headerActionBtnActive: {
+    backgroundColor: 'rgba(255,215,0,0.3)',
+    borderColor: '#FFD700',
   },
   headerActionText: { color: '#fff', fontSize: 11, fontWeight: '600' },
 
